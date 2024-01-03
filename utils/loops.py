@@ -16,7 +16,7 @@ def process_batch(model, data, loss_fn, additional_features, optimizer=None):
     if optimizer:
         optimizer.zero_grad()
 
-    pred = model(x, add_feat) if add_feat else model(x)
+    pred = model(x, add_feat) if add_feat is not None else model(x)
     loss = loss_fn(pred, y)
 
     if optimizer:
@@ -61,10 +61,6 @@ def test_loop(dataloader, model, loss_fn, additional_features: bool = False):
             correct += np.sum(_y == _p)
             cm_pred.extend(_p)
             cm_true.extend(_y)
-
-            if not additional_features:
-                plt.imshow(data[0][0].cpu().permute(1, 2, 0))
-                plt.show()
 
     accuracy = correct / size
     average_loss = sum(test_loss) / len(test_loss)

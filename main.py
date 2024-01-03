@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from model.CustomDataSet import prepareDataSet
+from model.CustomDataSet import prepare_data_set
 from model.model import BarleyClassificationModel
 from utils.data import features_csv, img_csv
 from utils.loops import test_loop, train_loop
@@ -9,13 +9,13 @@ from utils.loops import test_loop, train_loop
 if __name__ == '__main__':
     losses = []
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    additional_features = False
+    additional_features = True
 
-    train_ds, test_ds = prepareDataSet(features_csv, img_csv,
-                                       (170, 80), additional_features_mod=additional_features)
+    train_ds, test_ds = prepare_data_set(features_csv, img_csv,
+                                         (170, 80), additional_features_mod=additional_features)
 
     test_ds_loader = DataLoader(test_ds, batch_size=8, shuffle=True)
-    train_ds_loader = DataLoader(train_ds, batch_size=8, shuffle=True)
+    train_ds_loader = DataLoader(train_ds, batch_size=8, shuffle=True, drop_last=True)
     loss_fun = torch.nn.BCELoss()
     model = BarleyClassificationModel((170, 80), additionalFeatures=additional_features).to(device)
     optim = torch.optim.Adam(model.parameters(), 0.0001)

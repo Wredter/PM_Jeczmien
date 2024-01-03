@@ -29,11 +29,12 @@ class BarleyClassificationModel(torch.nn.Module):
         self.pool4 = torch.nn.MaxPool2d(kernel_size=(2, 2))
         if additionalFeatures:
             self.fc1 = torch.nn.Linear(in_features=features, out_features=128)
-            self.fc1_5 = torch.nn.Linear(in_features=128, out_features=128)
+            self.bn = torch.nn.BatchNorm1d(num_features=128)
+            self.fc2 = self.fc2 = torch.nn.Linear(in_features=128, out_features=5)
         else:
             self.fc1 = torch.nn.Linear(in_features=features, out_features=128)
+            self.fc2 = torch.nn.Linear(in_features=128, out_features=5)
         self.drop = torch.nn.Dropout(p=0.2)
-        self.fc2 = torch.nn.Linear(in_features=128, out_features=5)
         self.softmax = torch.nn.Softmax(dim=1)
 
     def forward(self, x: torch.tensor, add_feat: torch.tensor=None):
@@ -47,10 +48,10 @@ class BarleyClassificationModel(torch.nn.Module):
         if self.additionalFeatures:
             x = torch.cat((x, add_feat), dim=1)
             x = self.fc1(x)
-            x = self.fc1_5(x)
+            x = self.bn(x)
         else:
             x = self.fc1(x)
-        x = self.drop(x)
+            x = self.drop(x)
         x = self.softmax(self.fc2(x))
 
         return x
