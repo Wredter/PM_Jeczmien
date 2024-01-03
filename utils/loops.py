@@ -7,46 +7,43 @@ import numpy as np
 from utils.data import desired_order
 
 
-def train_loop(dataloader, model, loss_fn, optimizer, additionalFeatures: bool=False):
+def process_batch(model, data, loss_fn, additional_features, optimizer=None):
+    if additional_features:
+        x, add_feat, y = data
+    else:
+        x, y = data
+        add_feat = None
+    if optimizer:
+        optimizer.zero_grad()
+
+    pred = model(x, add_feat) if add_feat else model(x)
+    loss = loss_fn(pred, y)
+
+    if optimizer:
+        loss.backward()
+        optimizer.step()
+
+    return loss.item(), pred, y
+
+
+def train_loop(dataloader, model, loss_fn, optimizer, additional_features: bool = False):
     size = len(dataloader.dataset)
     losses = []
-    acc = []
     model.train()
-    if additionalFeatures:
-        for batch, (X, add_feat, y) in enumerate(dataloader):
-            # Compute prediction and loss
-            pred = model(X, add_feat)
-            loss = loss_fn(pred, y)
-            losses.append(loss.item())
 
-            # Backpropagation
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+    for batch, data in enumerate(dataloader):
+        loss, _, _ = process_batch(model, data, loss_fn, additional_features, optimizer)
+        losses.append(loss)
 
-            if batch % 100 == 0:
-                loss, current = loss.item(), (batch + 1) * len(X)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-    else:
-        for batch, (X, y) in enumerate(dataloader):
+        if batch % 100 == 0:
+            current = (batch + 1) * len(data[0])
+            average_loss = sum(losses) / len(losses)
+            print(f"loss: {average_loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-            # Compute prediction and loss
-            pred = model(X)
-            loss = loss_fn(pred, y)
-            losses.append(loss.item())
-
-            # Backpropagation
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-
-            if batch % 100 == 0:
-                loss, current = loss.item(), (batch + 1) * len(X)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
     return sum(losses) / len(losses)
 
 
-def test_loop(dataloader, model, loss_fn, additionalFeatures: bool=False):
+def test_loop(dataloader, model, loss_fn, additional_features: bool = False):
     model.eval()
     size = len(dataloader.dataset)
     correct = 0
@@ -55,28 +52,23 @@ def test_loop(dataloader, model, loss_fn, additionalFeatures: bool=False):
     cm_true = []
 
     with torch.no_grad():
-        if additionalFeatures:
-            for X, add_feat, y in dataloader:
-                pred = model(X, add_feat)
-                test_loss.append(loss_fn(pred, y).item())
-                _p = pred.argmax(dim=1).cpu().numpy()
-                _y = y.argmax(dim=1).cpu().numpy()
-                correct += np.sum(_y == _p)
-                cm_pred.extend(_p)
-                cm_true.extend(_y)
-        else:
-            for X, y in dataloader:
-                pred = model(X)
-                test_loss.append(loss_fn(pred, y).item())
-                _p = pred.argmax(dim=1).cpu().numpy()
-                _y = y.argmax(dim=1).cpu().numpy()
-                correct += np.sum(_y == _p)
-                cm_pred.extend(_p)
-                cm_true.extend(_y)
-                plt.imshow(X[0].cpu().permute(1, 2, 0))
+        for data in dataloader:
+            loss, pred, y = process_batch(model, data, loss_fn, additional_features)
+            test_loss.append(loss)
 
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {sum(test_loss)/len(test_loss):>8f} \n")
+            _p = pred.argmax(dim=1).cpu().numpy()
+            _y = y.argmax(dim=1).cpu().numpy()
+            correct += np.sum(_y == _p)
+            cm_pred.extend(_p)
+            cm_true.extend(_y)
+
+            if not additional_features:
+                plt.imshow(data[0][0].cpu().permute(1, 2, 0))
+                plt.show()
+
+    accuracy = correct / size
+    average_loss = sum(test_loss) / len(test_loss)
+    print(f"Test Error: \n Accuracy: {(100 * accuracy):>0.1f}%, Avg loss: {average_loss:>8f} \n")
 
     cf_matrix = confusion_matrix(cm_true, cm_pred)
     df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in desired_order],

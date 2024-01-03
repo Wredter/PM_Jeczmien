@@ -40,26 +40,33 @@ class CustomImageDataset(Dataset):
             return img.to(self.device), torch.tensor(target.values, dtype=torch.float32).to(self.device)
 
     def __get_img(self, img):
+#        img2 = copy(img)
         img = Image.open(img)
+        try:
+            img2 = Image.open(img)
+        except Exception:
+            pass
         ratio = float(img.height) / img.width
         if ratio > 1:
             diff = img.height - img.width
             diff //= 2
             transform = v2.Compose(
                 [v2.PILToTensor(),
-                 v2.Pad([diff, 0, diff, 0], fill=0),
+                 #v2.Pad([diff, 0, diff, 0], fill=0),
                  v2.ConvertImageDtype(torch.float32),
                  v2.Resize(self.img_size, antialias=True),
-                 v2.RandomRotation(180, interpolation=InterpolationMode.BILINEAR)])
+                 #v2.RandomRotation(180, interpolation=InterpolationMode.BILINEAR)
+                ])
         else:
             diff = img.width - img.height
             diff //= 2
             transform = v2.Compose(
                 [v2.PILToTensor(),
-                 v2.Pad([0, diff, 0, diff], fill=0),
+                 #v2.Pad([0, diff, 0, diff], fill=0),
                  v2.ConvertImageDtype(torch.float32),
                  v2.Resize(self.img_size, antialias=True),
-                 v2.RandomRotation(180, interpolation=InterpolationMode.BILINEAR)])
+                 #v2.RandomRotation(180, interpolation=InterpolationMode.BILINEAR)
+                 ])
         img = transform(img)
 #        s = torch.permute(img.clone(), (1, 2, 0))
 #        plt.imshow(s)
@@ -85,7 +92,7 @@ def prepareDataSet(features_csv: Path, img_csv: Path, img_size: tuple, additiona
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, stratify=y, random_state=11)
 
     train_ds = CustomImageDataset(x_train, y_train, img_size, additional_features_mod)
-    test_ds = CustomImageDataset(x_test, y_train, img_size, additional_features_mod)
+    test_ds = CustomImageDataset(x_test, y_test, img_size, additional_features_mod)
 
     return train_ds, test_ds
 
