@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import pandas as pd
 import numpy as np
+
+from model.model import BarleyClassificationModel
 from utils.data import desired_order
 
 
-def process_batch(model, data, loss_fn, additional_features, optimizer=None):
-    if additional_features:
+def process_batch(model: BarleyClassificationModel, data, loss_fn, add_feat, optimizer=None):
+    if add_feat:
         x, add_feat, y = data
     else:
         x, y = data
@@ -26,13 +28,15 @@ def process_batch(model, data, loss_fn, additional_features, optimizer=None):
     return loss.item(), pred, y
 
 
-def train_loop(dataloader, model, loss_fn, optimizer, additional_features: bool = False):
+def train_loop(dataloader, model: BarleyClassificationModel, loss_fn, optimizer, add_feat: bool = False):
     size = len(dataloader.dataset)
     losses = []
     model.train()
+    if add_feat:
+        model.freeze_cnn()
 
     for batch, data in enumerate(dataloader):
-        loss, _, _ = process_batch(model, data, loss_fn, additional_features, optimizer)
+        loss, _, _ = process_batch(model, data, loss_fn, add_feat, optimizer)
         losses.append(loss)
 
         if batch % 100 == 0:
@@ -43,7 +47,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, additional_features: bool 
     return sum(losses) / len(losses)
 
 
-def test_loop(dataloader, model, loss_fn, additional_features: bool = False):
+def test_loop(dataloader, model: BarleyClassificationModel, loss_fn, add_feat: bool = False):
     model.eval()
     size = len(dataloader.dataset)
     correct = 0
@@ -53,7 +57,7 @@ def test_loop(dataloader, model, loss_fn, additional_features: bool = False):
 
     with torch.no_grad():
         for data in dataloader:
-            loss, pred, y = process_batch(model, data, loss_fn, additional_features)
+            loss, pred, y = process_batch(model, data, loss_fn, add_feat)
             test_loss.append(loss)
 
             _p = pred.argmax(dim=1).cpu().numpy()
