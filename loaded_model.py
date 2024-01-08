@@ -14,7 +14,7 @@ losses = []
 timestr = time.strftime("%m%d/%H%M")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 additional_features = True
-
+just_test = False
 train_ds, test_ds = prepare_data_set(features_csv, img_csv,
                                      (170, 80), additional_features_mod=additional_features)
 
@@ -23,15 +23,22 @@ train_ds_loader = DataLoader(train_ds, batch_size=8, shuffle=True, drop_last=Tru
 loss_fun = torch.nn.BCELoss()
 model = BarleyClassificationModel((170, 80), add_feat=additional_features).to(device)
 optim = torch.optim.Adam(model.parameters(), 0.0001)
-epochs = 50
-cnn_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\CNN\\0301\\2353\\model.pth")
+epochs = 75
 
-model.backbone = torch.load(cnn_path)
+cnn_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\CNN\\0501\\1823\\model.pth")
+fc_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\FC\\0501\\1823\\model.pth")
 
-for t in range(epochs):
-    print(f"Epoch {t + 1}\n-------------------------------")
-    losses.append(train_loop(train_ds_loader, model, loss_fun, optim, add_feat=additional_features))
-    if (t + 1) % 25 == 0:
-        test_loop(test_ds_loader, model, loss_fun, add_feat=additional_features)
-plt.plot(losses)
-plt.show()
+
+if not just_test:
+    model.backbone = torch.load(cnn_path)
+    for t in range(epochs):
+        print(f"Epoch {t + 1}\n-------------------------------")
+        losses.append(train_loop(train_ds_loader, model, loss_fun, optim, add_feat=additional_features))
+        if (t + 1) % 25 == 0:
+            test_loop(test_ds_loader, model, loss_fun, add_feat=additional_features)
+    plt.plot(losses)
+    plt.show()
+else:
+    model.backbone = torch.load(cnn_path)
+    model.head = torch.load(fc_path)
+    test_loop(test_ds_loader, model, loss_fun, add_feat=additional_features)

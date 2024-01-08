@@ -37,6 +37,7 @@ class BarleyClassificationModel(torch.nn.Module):
 
         common_layers.extend([
             torch.nn.Linear(in_features=features, out_features=128),
+            torch.nn.Tanh(),
             torch.nn.Dropout(p=0.2),
             torch.nn.Linear(in_features=128, out_features=5),
             torch.nn.Softmax(dim=1)])

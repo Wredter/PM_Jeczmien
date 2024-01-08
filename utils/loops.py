@@ -1,5 +1,5 @@
 import torch
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 import seaborn as sn
 import pandas as pd
@@ -49,30 +49,35 @@ def train_loop(dataloader, model: BarleyClassificationModel, loss_fn, optimizer,
 
 def test_loop(dataloader, model: BarleyClassificationModel, loss_fn, add_feat: bool = False):
     model.eval()
-    size = len(dataloader.dataset)
-    correct = 0
-    test_loss = []
+#    size = len(dataloader.dataset)
+#    correct = 0
+#    test_loss = []
     cm_pred = []
     cm_true = []
 
     with torch.no_grad():
         for data in dataloader:
             loss, pred, y = process_batch(model, data, loss_fn, add_feat)
-            test_loss.append(loss)
+#            test_loss.append(loss)
 
             _p = pred.argmax(dim=1).cpu().numpy()
             _y = y.argmax(dim=1).cpu().numpy()
-            correct += np.sum(_y == _p)
+            #correct += np.sum(_y == _p)
             cm_pred.extend(_p)
             cm_true.extend(_y)
 
-    accuracy = correct / size
-    average_loss = sum(test_loss) / len(test_loss)
-    print(f"Test Error: \n Accuracy: {(100 * accuracy):>0.1f}%, Avg loss: {average_loss:>8f} \n")
-
+#    accuracy = correct / size
+#    average_loss = sum(test_loss) / len(test_loss)
+#    print(f"Test Error: \n Accuracy: {(100 * accuracy):>0.1f}%, Avg loss: {average_loss:>8f} \n")
+    print('\nClassification Report')
+    print(classification_report(cm_true, cm_pred, target_names=desired_order))
     cf_matrix = confusion_matrix(cm_true, cm_pred)
     df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in desired_order],
                          columns=[i for i in desired_order])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True)
+
+    plt.xlabel('Przewidywana')
+    plt.ylabel('Aktualna')
+
     plt.show()
