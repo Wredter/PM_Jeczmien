@@ -6,23 +6,35 @@ class BarleyClassificationModel(torch.nn.Module):
         super(BarleyClassificationModel, self).__init__()
         self.add_feat = add_feat
         self.filters = [64, 128, 256, 256]
-        features = 0
 
         # Wejście obrazy 170x80
         self.img_size = img_size
         self.backbone = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=3, out_channels=self.filters[0], kernel_size=3, stride=1, padding=0),
-            torch.nn.ReLU(inplace=True),
-            torch.nn.MaxPool2d(kernel_size=(2, 2)),
-            torch.nn.Conv2d(in_channels=self.filters[0], out_channels=self.filters[1], kernel_size=3, stride=1,
+            torch.nn.Conv2d(in_channels=3,
+                            out_channels=self.filters[0],
+                            kernel_size=3,
+                            stride=1,
                             padding=0),
             torch.nn.ReLU(inplace=True),
             torch.nn.MaxPool2d(kernel_size=(2, 2)),
-            torch.nn.Conv2d(in_channels=self.filters[1], out_channels=self.filters[2], kernel_size=3, stride=1,
+            torch.nn.Conv2d(in_channels=self.filters[0],
+                            out_channels=self.filters[1],
+                            kernel_size=3,
+                            stride=1,
                             padding=0),
             torch.nn.ReLU(inplace=True),
             torch.nn.MaxPool2d(kernel_size=(2, 2)),
-            torch.nn.Conv2d(in_channels=self.filters[2], out_channels=self.filters[3], kernel_size=3, stride=1,
+            torch.nn.Conv2d(in_channels=self.filters[1],
+                            out_channels=self.filters[2],
+                            kernel_size=3,
+                            stride=1,
+                            padding=0),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=(2, 2)),
+            torch.nn.Conv2d(in_channels=self.filters[2],
+                            out_channels=self.filters[3],
+                            kernel_size=3,
+                            stride=1,
                             padding=0),
             torch.nn.ReLU(inplace=True),
             torch.nn.MaxPool2d(kernel_size=(2, 2))

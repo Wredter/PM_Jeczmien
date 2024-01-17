@@ -16,17 +16,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 additional_features = True
 just_test = False
 train_ds, test_ds = prepare_data_set(features_csv, img_csv,
-                                     (170, 80), additional_features_mod=additional_features)
+                                     (80, 170), additional_features_mod=additional_features)
 
 test_ds_loader = DataLoader(test_ds, batch_size=8, shuffle=True)
 train_ds_loader = DataLoader(train_ds, batch_size=8, shuffle=True, drop_last=True)
 loss_fun = torch.nn.BCELoss()
-model = BarleyClassificationModel((170, 80), add_feat=additional_features).to(device)
+model = BarleyClassificationModel((80, 170), add_feat=additional_features).to(device)
 optim = torch.optim.Adam(model.parameters(), 0.0001)
 epochs = 75
 
-cnn_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\CNN\\0501\\1823\\model.pth")
-fc_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\FC\\0501\\1823\\model.pth")
+cnn_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\CNN\\1201\\1853\\model.pth")
+fc_path = Path("C:\\Users\\wikto\\PycharmProjects\\PM_Jeczmien\\Data\\FC\\1201\\1853\\model.pth")
 
 
 if not just_test:

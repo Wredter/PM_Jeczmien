@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose, PILToTensor, ConvertImageDtype, Resize
@@ -17,11 +18,6 @@ class CustomImageDataset(Dataset):
         self.img_size = img_size
         self.additional_features_mod = additional_features_mod
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.transform = Compose([
-            PILToTensor(),
-            ConvertImageDtype(torch.float32),
-            Resize(self.img_size, antialias=True),
-        ])
 
     def __len__(self):
         return len(self.features)
@@ -33,7 +29,7 @@ class CustomImageDataset(Dataset):
         else:
             img_path = Path(self.features.iloc[item]).resolve()
 
-        img = self.__get_img(img_path)
+        img = self.__resize_with_padding(img_path)
         target = torch.tensor(self.target.iloc[item, :].values, dtype=torch.float32).to(self.device)
 
         if self.additional_features_mod:
@@ -41,9 +37,30 @@ class CustomImageDataset(Dataset):
         else:
             return img, target
 
-    def __get_img(self, img_path):
-        img = Image.open(img_path)
-        return self.transform(img).to(self.device)
+    def __resize_with_padding(self, img_path):
+        image = Image.open(img_path)
+
+        aspect_ratio = image.width / image.height
+
+        target_width = int(min(self.img_size[0], self.img_size[1] * aspect_ratio))
+        target_height = int(min(self.img_size[1], self.img_size[0] / aspect_ratio))
+
+        resize_transform = Compose([
+            Resize((target_height, target_width)),
+        ])
+        resized_image = resize_transform(image)
+
+        padded_image = Image.new("RGB", self.img_size, (0, 0, 0))
+
+        padded_image.paste(resized_image, ((self.img_size[0] - target_width) // 2, (self.img_size[1] - target_height) // 2))
+
+        transform = Compose([
+            PILToTensor(),
+            ConvertImageDtype(torch.float32),
+        ])
+        padded_image_tensor = transform(padded_image).to(self.device)
+
+        return padded_image_tensor
 
 
 def prepare_data_set(features_csv: Path, img_csv: Path, img_size: tuple, additional_features_mod: bool = False):
